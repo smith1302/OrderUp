@@ -11,6 +11,9 @@ public class WaiterController : MonoBehaviour {
 	private GameObject currentCustomer;
 	private CustomerController currentCC;
 	private State currentState;
+
+	RaycastHit2D myhit = new RaycastHit2D();
+	Ray2D myray = new Ray2D();
 	// Use this for initialization
 	void Start () {
 		wc = transform.GetComponent<WalkingController> ();
@@ -23,6 +26,52 @@ public class WaiterController : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		stateAssigner ();
+
+		if (cwc.gameMode == "WaiterMiniGame" && Input.GetMouseButtonDown(0)){
+			Vector3 pos = Input.mousePosition;
+			Vector3 pt = Camera.main.ScreenToWorldPoint (pos);
+			RaycastHit2D hitInfo = Physics2D.Raycast(pt, Vector2.zero);
+			if(hitInfo != null) {
+				string tag = "None";
+				if (hitInfo.rigidbody != null) {
+					tag = hitInfo.rigidbody.gameObject.tag;
+				}else if (hitInfo.collider != null) {
+					tag = hitInfo.collider.gameObject.tag;
+				}
+				Debug.Log(tag);
+				if (tag == "Customer") {
+					currentTarget = (GameObject)cwc.customerQueue.Peek();
+					currentCC = (CustomerController) currentTarget.GetComponent(typeof(CustomerController));
+					wc.setState("GettingCustomer");
+					if (!currentCC.hasWaiter) {
+						currentCC.setWaiter(gameObject);
+						currentCC.hasWaiter = true;
+						currentCustomer = currentTarget;
+						walkToTarget();
+					}
+					return;
+				}else if (tag == "Table") {
+					Properties p = (Properties)hitInfo.collider.gameObject.GetComponent(typeof(Properties));
+					if (wc.state == "GettingCustomer" && p.getCustomer() == null) {
+						currentTarget = hitInfo.collider.gameObject;
+						cwc.customerQueue.Dequeue();
+						cwc.shiftWaitingCustomers();
+						startCustomerFollow();
+						walkToTarget();
+					}else if (p.getCustomer()) {
+						currentCC = (CustomerController) p.getCustomer().GetComponent(typeof(CustomerController));
+						if (currentCC.getState() == "WaitAfterOrder") {
+							currentTarget = hitInfo.collider.gameObject;
+							walkToTarget();
+							wc.setState("TakeOrder");
+						}
+					}
+					return;
+				}
+			}
+			walkTo(pt);
+			wc.setState("None");
+		}
 	}
 
 	void walkToTarget() {
@@ -49,68 +98,92 @@ public class WaiterController : MonoBehaviour {
 		//IMPORTANT: Fired AFTER we finished the specified state
 		if (!wc.hasTarget) {
 
-			if (wc.state == "WalkToBase") {
-				float randomY = Random.Range(-1,3);
-				float randomX = Random.Range(-.5f,.5f);
-				walkTo(new Vector3(randomX,randomY,0));
-				currentTarget = null;
-				wc.setState("None");
-			}
-
-			if (wc.state == "deliverFoodToCustomer") {
-				Properties p = (Properties) currentTarget.GetComponent(typeof(Properties));
-				currentCC = (CustomerController) p.getCustomer().GetComponent(typeof(CustomerController));
-				currentCC.setState("initEating");
-				wc.setState("WalkToBase");
-			}else
-			if (wc.state == "getFood") {// just go to the kitchen
-				currentTarget = currentState.getOptionalObj();
-				walkToTarget();
-				wc.setState("deliverFoodToCustomer");
-			}else
-			if (wc.state == "deliverOrderToKitchen") {
-				//State obj = table
-				//State optional obj = customer
-				State s = new State(cwc.kitchen, "getFood");
-				s.setOptionalObj (currentState.getObj());
-				cwc.stateQueue.Enqueue (s);
-				wc.setState("None");
-			}else
-			if (wc.state == "readyToOrder") {
-				currentTarget = cwc.kitchen;
-				currentCC = (CustomerController) currentState.getOptionalObj().GetComponent(typeof(CustomerController));
-				currentCC.setState("waitForFood");
-				walkToTarget();
-				wc.setState("deliverOrderToKitchen");
-			}else
-			if (wc.state == "walkingCustomer") {
-				currentTarget = getNewTable();
-				startCustomerFollow();
-				walkToTarget();
-				wc.setState("seatingCustomer");
-				return;
-			}else if (wc.state == "seatingCustomer") {
-				wc.setState("WalkToBase");
-
-			}else if (wc.state == "None") { //if we arent doing anything, check our state queue
-					//Theres customers waiting and we aren't seating another customer AND theres available tables
-					if (cwc.customerQueue.Count > 0 && wc.state != "walkingCustomer" && cwc.tableQueue.Count > 0) {
-						currentTarget = (GameObject)cwc.customerQueue.Dequeue();
-						currentCustomer = currentTarget;
-						walkToTarget();
-						wc.setState("walkingCustomer");
-						return;
-					}
-				    if (cwc.stateQueue.Count > 0) {
-						currentState = (State)cwc.stateQueue.Dequeue();
-						currentTarget = currentState.getObj();
-						walkToTarget();
-						wc.setState(currentState.getState());
-						return;
-					}
+			if (cwc.gameMode != "WaiterMiniGame") {
+				NonMiniGameModeStates();
 			}else{
-				wc.setState("WalkToBase");
+				WaiterMiniGameStates();
 			}
+		}
+	}
+
+	void WaiterMiniGameStates() {
+		if (wc.state == "TakeOrder") {
+			currentCC.setState("waitForFood");
+		}
+	}
+
+	void NonMiniGameModeStates() {
+		if (wc.state == "WalkToBase") {
+			float randomY = Random.Range(-1,3);
+			float randomX = Random.Range(-.5f,.5f);
+			walkTo(new Vector3(randomX,randomY,0));
+			currentTarget = null;
+			wc.setState("None");
+		}
+		
+		if (wc.state == "deliverFoodToCustomer") {
+			Properties p = (Properties) currentTarget.GetComponent(typeof(Properties));
+			currentCC = (CustomerController) p.getCustomer().GetComponent(typeof(CustomerController));
+			currentCC.setState("initEating");
+			wc.setState("WalkToBase");
+		}else
+		if (wc.state == "getFood") {// just go to the kitchen
+			currentTarget = currentState.getOptionalObj();
+			walkToTarget();
+			wc.setState("deliverFoodToCustomer");
+		}else
+		if (wc.state == "deliverOrderToKitchen") {
+			//State obj = table
+			//State optional obj = customer
+			State s = new State(cwc.kitchen, "getFood");
+			s.setOptionalObj (currentState.getObj());
+			cwc.stateQueue.Enqueue (s);
+			wc.setState("None");
+		}else
+		if (wc.state == "readyToOrder") {
+			currentTarget = cwc.kitchen;
+			currentCC = (CustomerController) currentState.getOptionalObj().GetComponent(typeof(CustomerController));
+			currentCC.setState("waitForFood");
+			walkToTarget();
+			wc.setState("deliverOrderToKitchen");
+		}else
+		if (wc.state == "walkingCustomer") {
+			currentTarget = getNewTable();
+			cwc.customerQueue.Dequeue();
+			cwc.shiftWaitingCustomers();
+			startCustomerFollow();
+			walkToTarget();
+			wc.setState("seatingCustomer");
+			return;
+		}else if (wc.state == "seatingCustomer") {
+			wc.setState("WalkToBase");
+			
+		}else if (wc.state == "None") { //if we arent doing anything, check our state queue
+			//Theres customers waiting and we aren't seating another customer AND theres available tables
+			if (cwc.customerQueue.Count > 0 && wc.state != "walkingCustomer" && cwc.tableQueue.Count > 0) {
+				currentTarget = (GameObject)cwc.customerQueue.Peek();
+				currentCC = (CustomerController) currentTarget.GetComponent(typeof(CustomerController));
+				
+				if (!currentCC.hasWaiter) {
+					Debug.Log("Getting customer.. waiter status: "+currentCC.hasWaiter);
+					currentCC.setWaiter(gameObject);
+					currentCC.hasWaiter = true;
+					Debug.Log("Now has waiter...");
+					currentCustomer = currentTarget;
+					walkToTarget();
+					wc.setState("walkingCustomer");
+					return;
+				}
+			}
+			if (cwc.stateQueue.Count > 0) {
+				currentState = (State)cwc.stateQueue.Dequeue();
+				currentTarget = currentState.getObj();
+				walkToTarget();
+				wc.setState(currentState.getState());
+				return;
+			}
+		}else{
+			wc.setState("WalkToBase");
 		}
 	}
 
@@ -120,7 +193,7 @@ public class WaiterController : MonoBehaviour {
 			n.y += aboveTableBuffer;
 			currentCC = (CustomerController)currentCustomer.GetComponent (typeof(CustomerController));
 			currentCC.setTable (currentTarget);
-			currentCC.walkTo (n, .25f);
+			currentCC.walkTo (n, .35f);
 			currentCC.setState ("walkToTable");
 			wc.startWalk ();
 		} else {

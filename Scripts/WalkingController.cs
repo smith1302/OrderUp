@@ -35,6 +35,10 @@ public class WalkingController : MonoBehaviour {
 		walkToCoord ();
 	}
 
+	public string getState() {
+		return state;
+	}
+
 	public void setState(string state) {
 		this.state = state;
 	}

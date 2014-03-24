@@ -6,30 +6,35 @@ public class CustomerController : MonoBehaviour {
 	CustomerWaiterController cwc;
 	GameObject orderUp;
 	GameObject table;
+	GameObject waiter;
 	GameObject instantiatedorderUp;
 	Properties p;
 	float timer;
 	float timeToOrder;
+	public bool hasWaiter;
 	// Use this for initialization
 	void Start () {
 		timeToOrder = 3;
-
-
+		hasWaiter = false;
 		wc = transform.GetComponent<WalkingController> ();
 		cwc = (GameObject.FindGameObjectWithTag ("Script")).GetComponent<CustomerWaiterController> ();
-
+		setState ("In Line");
 		orderUp = (GameObject)Resources.Load ("order_up");
 
 		Time.timeScale = 1f;
 		timer = 0;
-		setState ("Wait");
-		Debug.Log ("Queue Size: " + cwc.customerQueue.Count + ", Pos: " + (float)(((float)cwc.customerQueue.Count - 1) / 3) + .25f);
-		walkNoWait(new Vector3((float)(((float)cwc.customerQueue.Count-1)/3)+.25f,2.5f,0));
+		walkNoWait(new Vector3((float)(((float)cwc.getNumInLine()-1)/2)+.25f,2.5f,0));
+		cwc.customerQueue.Enqueue (gameObject);
 	}
 	
 	// Update is called once per frame
 	void Update () {
 		stateAssigner ();
+	}
+
+	public void setWaiter(GameObject w) {
+		waiter = w;
+		hasWaiter = true;
 	}
 
 	public void setTable(GameObject t) {
@@ -60,12 +65,12 @@ public class CustomerController : MonoBehaviour {
 			}
 			if (wc.state =="waitForFood") {
 				DestroyObject(instantiatedorderUp);
-				setState("Wait");
+				setState("WaitAfterFood");
 				return;
 			}
 
 			if (Time.time >= timer && wc.state == "Order") {
-				setState("Wait");
+				setState("WaitAfterOrder");
 				if (table != null) {
 					generateReady(table.transform.position);
 				}
@@ -118,7 +123,7 @@ public class CustomerController : MonoBehaviour {
 		wc.setState (s);
 	}
 
-	public void getState() {
-		//wc.state;
+	public string getState() {
+		return wc.getState ();
 	}
 }

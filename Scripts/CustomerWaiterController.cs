@@ -10,25 +10,28 @@ public class CustomerWaiterController : MonoBehaviour {
 	public bool generated = false;
 	float elapsed;
 	public Queue stateQueue;
-	public Queue customerQueue;
+	public Queue customerQueue; 
+	public Queue customerLine;
 	float numWaiting;
-
 	public GameObject kitchen;
+	int numInLine;
+	public string gameMode;
 	//I seperated stateQueue and customerQueue (in WaiterController) since they have different priority
 
 	void Start () {
 		tableQueue = new Queue ();
 		stateQueue = new Queue ();
 		customerQueue = new Queue ();
+		customerLine = new Queue ();
 		waiterObj = (GameObject)Resources.Load ("Waiter");
 		customerVector = new Vector3(0, 3f, 0);
 		waiterVector = new Vector3(0, -3f, 0);
 		elapsed = Time.time;
 		initTableFinder ();
 		generateWaiter ();
-		generateWaiter ();
 		kitchen = GameObject.FindGameObjectWithTag ("Kitchen");
 		numWaiting = 0;
+		gameMode = "WaiterMiniGame";
 	}
 	
 	// Update is called once per frame
@@ -36,7 +39,9 @@ public class CustomerWaiterController : MonoBehaviour {
 		if (Time.time - elapsed >= 3) {
 			generated = true;
 			elapsed = Time.time;
-			generateCustomer();
+			if (getNumInLine () <= 3) {
+				generateCustomer();
+			}
 		}
 	}
 
@@ -44,12 +49,11 @@ public class CustomerWaiterController : MonoBehaviour {
 		Vector3 v = waiterVector;
 		v.y += Random.Range (0, 4);
 		v.x += Random.Range (-1, 1);
-		GameObject instantiatedWaiter= (GameObject)Instantiate(waiterObj, v, Quaternion.identity);
+		Instantiate(waiterObj, v, Quaternion.identity);
 	}
 
 	void generateCustomer() {
-		GameObject instantiatedCustomer = (GameObject)Instantiate(customerObj, customerVector, Quaternion.identity);
-		customerQueue.Enqueue (instantiatedCustomer);
+		Instantiate(customerObj, customerVector, Quaternion.identity);
 		numWaiting++;
 		/*GameObject waiter = GameObject.FindGameObjectWithTag ("Waiter");
 		if (waiter != null) {
@@ -88,16 +92,31 @@ public class CustomerWaiterController : MonoBehaviour {
 	}
 
 	public void shiftWaitingCustomers() {
-
-		/*Queue temp = new Queue (customerQueue);
-		int current = 1;
+		Queue temp = new Queue (customerQueue);
+		int current = 0;
 		while (temp.Count != 0) {
 			GameObject c = (GameObject)temp.Dequeue();
 			CustomerController cc =(CustomerController) c.GetComponent(typeof(CustomerController));
-			if (cc.getState() == "Wait") {
-				cc.walkNoWait(new Vector3((float)(((float)current)/3)+.25f,2.5f,0));
+			if (cc.getState() == "In Line") {
+				cc.walkTo(new Vector3((float)(((float)current-1)/2)+.25f,2.5f,0),.5f);
 				current++;
 			}
-		}*/
+		}
+	}
+
+	public int getNumInLine() {
+		if (customerQueue == null || customerQueue.Count == 0) {
+			return 0;
+		}
+		Queue temp = new Queue (customerQueue);
+		int current = 0;
+		while (temp.Count != 0) {
+			GameObject c = (GameObject)temp.Dequeue();
+			CustomerController cc =(CustomerController) c.GetComponent(typeof(CustomerController));
+			if (cc.getState() == "In Line") {
+				current++;
+			}
+		}
+		return current;
 	}
 }
