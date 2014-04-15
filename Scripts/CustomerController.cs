@@ -11,6 +11,7 @@ public class CustomerController : MonoBehaviour {
 	Properties p;
 	float timer;
 	float timeToOrder;
+	public GameObject moneyText;
 	public bool hasWaiter;
 	// Use this for initialization
 	void Start () {
@@ -55,6 +56,12 @@ public class CustomerController : MonoBehaviour {
 				p.setCustomer(null);
 				cwc.addTableToQueue(table);
 				setState("Leaving");
+				Vector3 pos = transform.position;
+				pos.z = -2f;
+				pos.x = pos.x-.4f;
+				GameObject money = (GameObject) Instantiate(moneyText, pos, Quaternion.identity);
+				money.renderer.material.SetColor("_Color",Color.green);
+				//moveMoneyUp(money);
 				return;
 			}
 			//this state will be set by the waiter when we comes by
@@ -84,6 +91,10 @@ public class CustomerController : MonoBehaviour {
 			}
 		}
 	}
+
+	/*void moveMoneyUp(GameObject money) {
+		money.transform.position = new Vector3 (transform.position.x, transform.position.y+., transform.position.z);
+	}*/
 
 	void generateReady(Vector3 v) {
 		v.y += 1f;

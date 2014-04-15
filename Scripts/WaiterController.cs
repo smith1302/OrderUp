@@ -11,6 +11,8 @@ public class WaiterController : MonoBehaviour {
 	private GameObject currentCustomer;
 	private CustomerController currentCC;
 	private State currentState;
+	int ordersToDeliver = 0;
+	bool foodToDeliver = false;
 
 	RaycastHit2D myhit = new RaycastHit2D();
 	Ray2D myray = new Ray2D();
@@ -26,7 +28,7 @@ public class WaiterController : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		stateAssigner ();
-
+		//Debug.Log (wc.state);
 		if (cwc.gameMode == "WaiterMiniGame" && Input.GetMouseButtonDown(0)){
 			Vector3 pos = Input.mousePosition;
 			Vector3 pt = Camera.main.ScreenToWorldPoint (pos);
@@ -40,6 +42,7 @@ public class WaiterController : MonoBehaviour {
 				}
 				Debug.Log(tag);
 				if (tag == "Customer") {
+					Debug.Log("Customer Click");
 					currentTarget = (GameObject)cwc.customerQueue.Peek();
 					currentCC = (CustomerController) currentTarget.GetComponent(typeof(CustomerController));
 					wc.setState("GettingCustomer");
@@ -51,6 +54,7 @@ public class WaiterController : MonoBehaviour {
 					}
 					return;
 				}else if (tag == "Table") {
+					Debug.Log("Table Click");
 					Properties p = (Properties)hitInfo.collider.gameObject.GetComponent(typeof(Properties));
 					if (wc.state == "GettingCustomer" && p.getCustomer() == null) {
 						currentTarget = hitInfo.collider.gameObject;
@@ -60,12 +64,24 @@ public class WaiterController : MonoBehaviour {
 						walkToTarget();
 					}else if (p.getCustomer()) {
 						currentCC = (CustomerController) p.getCustomer().GetComponent(typeof(CustomerController));
+						Debug.Log(currentCC.getState());
 						if (currentCC.getState() == "WaitAfterOrder") {
 							currentTarget = hitInfo.collider.gameObject;
 							walkToTarget();
 							wc.setState("TakeOrder");
+							ordersToDeliver++;
+						}else if (currentCC.getState() == "WaitAfterFood" && foodToDeliver) {
+							currentTarget = hitInfo.collider.gameObject;
+							walkToTarget();
+							wc.setState("deliverFoodToCustomer");
 						}
 					}
+					return;
+				}else if (tag == "Kitchen") {
+					Debug.Log("Kitchen Click");
+					currentTarget = hitInfo.collider.gameObject;
+					walkToTarget();
+					wc.setState("walkingToKitchen");
 					return;
 				}
 			}
@@ -109,6 +125,24 @@ public class WaiterController : MonoBehaviour {
 	void WaiterMiniGameStates() {
 		if (wc.state == "TakeOrder") {
 			currentCC.setState("waitForFood");
+		}
+		if (wc.state == "walkingToKitchen") {
+			if (ordersToDeliver > 0) {
+				for (int i = 0; i < ordersToDeliver; i++) {
+					cwc.kc.addOrder();
+				}
+				ordersToDeliver = 0;
+			}
+			if (cwc.kc.takeFood(foodToDeliver)) {
+				foodToDeliver = true;
+			}
+			wc.setState("None");
+		}
+		if (wc.state == "deliverFoodToCustomer") {
+			Properties p = (Properties) currentTarget.GetComponent(typeof(Properties));
+			currentCC = (CustomerController) p.getCustomer().GetComponent(typeof(CustomerController));
+			currentCC.setState("initEating");
+			foodToDeliver = false;
 		}
 	}
 

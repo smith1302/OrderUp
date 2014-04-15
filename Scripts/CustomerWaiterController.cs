@@ -14,6 +14,7 @@ public class CustomerWaiterController : MonoBehaviour {
 	public Queue customerLine;
 	float numWaiting;
 	public GameObject kitchen;
+	public KitchenController kc;
 	int numInLine;
 	public string gameMode;
 	//I seperated stateQueue and customerQueue (in WaiterController) since they have different priority
@@ -30,8 +31,9 @@ public class CustomerWaiterController : MonoBehaviour {
 		initTableFinder ();
 		generateWaiter ();
 		kitchen = GameObject.FindGameObjectWithTag ("Kitchen");
+		kc = (KitchenController) kitchen.GetComponent<KitchenController> ();
 		numWaiting = 0;
-		gameMode = "WaiterMiniGame";
+		gameMode = "WaiterMiniGame"; //WaiterMiniGame
 	}
 	
 	// Update is called once per frame
