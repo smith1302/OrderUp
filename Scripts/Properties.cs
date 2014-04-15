@@ -4,7 +4,7 @@ using System.Collections;
 public class Properties : MonoBehaviour {
 	public bool open;
 	public string status;
-	private GameObject customer;
+	public GameObject customer;
 
 	// Use this for initialization
 	void Start () {

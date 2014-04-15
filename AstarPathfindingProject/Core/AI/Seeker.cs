@@ -409,7 +409,7 @@ public class Seeker : MonoBehaviour {
 	 * 
 	 * \a callback will be called when the path has completed.
 	 * \a Callback will not be called if the path is canceled (e.g when a new path is requested before the previous one has completed) */
-	public Path StartPath (Path p, OnPathDelegate callback = null, int graphMask = -1) {
+	public Path StartPath (Path p, OnPathDelegate callback 		= null, int graphMask = -1) {
 		p.enabledTags = traversableTags.tagsChange;
 		p.tagPenalties = tagPenalties;
 		
