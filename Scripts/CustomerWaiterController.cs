@@ -19,14 +19,16 @@ public class CustomerWaiterController : MonoBehaviour {
 	public Queue stateQueue;
 	public Queue customerQueue;
 	float numWaiting;
-	public WorldVariables worldvar;
 	public GameObject kitchen;
 	public GameObject worldinfo;
+	public WorldVariables worldvar;
 	int numofcustomers;
 	int money = 0;
+	int z;
 	//I seperated stateQueue and customerQueue (in WaiterController) since they have different priority
 
 	void Start () {
+		int z = 0;
 		employeeinfo = GameObject.FindGameObjectWithTag ("Employees");
 		employeevar = (Employees)employeeinfo.GetComponent (typeof(Employees));
 		money = 8;
@@ -50,19 +52,22 @@ public class CustomerWaiterController : MonoBehaviour {
 		numWaiting = 0;
 		worldvar.switches ();
 	}
-	
+
 	// Update is called once per frame
 	void Update () {
-		if (Time.time - elapsed >= 5) {
+		if (Time.time - elapsed >= 4) {
 			generated = true;
 			elapsed = Time.time;
-			if (getNumInLine () <= 4) {
+			if (getNumInLine () <= z) {
 				generateCustomer();
 			}
 		}
 	}
 
-
+	public void setz()
+	{
+		z++;
+	}
 	
 
 	void generateWaiters() {
@@ -87,7 +92,6 @@ public class CustomerWaiterController : MonoBehaviour {
 		GameObject instantiatedCustomer = (GameObject)Instantiate(customerObj, customerVector, Quaternion.identity);
 		instantiatedCustomer.SetActive (false);
 		instantiatedCustomer.SetActive (true);
-		worldvar.setIncome();
 	}
 
 	GameObject getRandomWaiter() {

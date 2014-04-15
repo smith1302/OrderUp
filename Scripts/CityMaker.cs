@@ -15,13 +15,15 @@ public class CityMaker : MonoBehaviour {
 	GameObject worldinfo;
 	WorldVariables worldvar;
 	int j;
+	int start;
 	public Transform[] OldPlane;
 	// Use this for initialization
 	void Start () 
 	{
 		worldinfo = GameObject.FindGameObjectWithTag ("WorldInfo");
 		worldvar = (WorldVariables)worldinfo.GetComponent (typeof(WorldVariables));
-
+		Debug.Log (worldvar.newrestaurants [1]);
+		start = 0;
 		if(worldvar.switched == false)
 		{
 		numbers = new int[60];
@@ -76,22 +78,32 @@ public class CityMaker : MonoBehaviour {
 		{
 			order = worldvar.order;
 			int z = order[0];
-			Debug.Log("Switch: " + z);
 			DatPlane[z].renderer.material.mainTexture = allStructures [1];
 			z = order[1];
-			Debug.Log("Switch: " + z);
 			DatPlane[z].renderer.material.mainTexture = allStructures [2];
 			for(int i = 0; i < 40; i++)
 			{
 				z = order[i+2];
-				Debug.Log("Switch: " + z);
 				DatPlane[z].renderer.material.mainTexture = allStructures [3];
 			}
 			for(int i = 0; i < 18; i++)
 			{
 				z = order[i+42];
-				Debug.Log("Switch: " + z);
 				DatPlane[z].renderer.material.mainTexture = allStructures[0];
+			}
+
+			for(int i = 0; i < 40; i++)
+			{
+				z = order[i+2];
+				if(worldvar.newrestaurants[i] == 1)
+				{
+					DatPlane[z].renderer.material.mainTexture = allStructures[1];
+				}
+				if(worldvar.newrestaurants[i] == 2)
+				{
+					DatPlane[z].renderer.material.mainTexture = allStructures[2];
+				}
+				
 			}
 		}
 	}

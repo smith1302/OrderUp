@@ -11,12 +11,17 @@ public class CustomerController : MonoBehaviour {
 	GameObject waiter;
 	Properties p;
 	float timer;
+	float timeToEat;
 	float timeToOrder;
+	GameObject worldinfo;
+	WorldVariables worldvar;
 	// Use this for initialization
 	void Start () {
 		hasWaiter = false;
+		timeToEat = 3;
 		timeToOrder = 3;
-		
+		worldinfo = GameObject.FindGameObjectWithTag ("WorldInfo");
+		worldvar = (WorldVariables)worldinfo.GetComponent (typeof(WorldVariables));
 		wc = transform.GetComponent<WalkingController> ();
 		cwc = (GameObject.FindGameObjectWithTag ("Script")).GetComponent<CustomerWaiterController> ();
 		
@@ -31,6 +36,26 @@ public class CustomerController : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		stateAssigner ();
+		if(worldvar.getNumOfChefs() == 2)
+		{
+			timeToEat = 2;
+			timeToOrder = 3;
+		}
+		if(worldvar.getNumOfChefs() == 3)
+		{
+			timeToEat = 2;
+			timeToOrder = 2;
+		}
+		if(worldvar.getNumOfChefs() == 4)
+		{
+			timeToEat = 1;
+			timeToOrder = 2;
+		}
+		if(worldvar.getNumOfChefs() == 5)
+		{
+			timeToEat = 1;
+			timeToOrder = 1;
+		}
 	}
 
 	public void setWaiter(GameObject w) {
@@ -53,6 +78,7 @@ public class CustomerController : MonoBehaviour {
 			}
 			if (Time.time >= timer && wc.state == "Eating") {
 				walkNoWait(new Vector3(0,3f,0));
+				worldvar.setIncome();
 				p.setCustomer(null);
 				cwc.addTableToQueue(table);
 				setState("Leaving");
@@ -60,7 +86,7 @@ public class CustomerController : MonoBehaviour {
 			}
 			//this state will be set by the waiter when we comes by
 			if (wc.state == "initEating") {
-				timer = Time.time + 3; //how long will they eat for?
+				timer = Time.time + timeToEat; //how long will they eat for?
 				setState("Eating");
 				return;
 			}

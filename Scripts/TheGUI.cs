@@ -21,17 +21,47 @@ public class TheGUI : MonoBehaviour {
 	private Material OriginalMat;
 	public Material HoverMat;
 	GameObject worldinfo;
+	GameObject myObject;
 	WorldVariables worldvar;
-	CustomerWaiterController cwc;
+	GameObject employeeinfo;
+	Employees employeevar;
+	CityMaker citymaker;
+	GameObject camera;
+	int restaurantcost;
 	// Use this for initialization
 	void Start () {
 		int switchcase = 0;
+		restaurantcost = 1000;
+		employeeinfo = GameObject.FindGameObjectWithTag ("Employees");
+		employeevar = (Employees)employeeinfo.GetComponent (typeof(Employees));
 		worldinfo = GameObject.FindGameObjectWithTag ("WorldInfo");
 		worldvar = (WorldVariables)worldinfo.GetComponent (typeof(WorldVariables));
+		camera = GameObject.FindGameObjectWithTag ("MainCamera");
+		citymaker = (CityMaker)camera.GetComponent (typeof(CityMaker));
 	}
 	
 	// Update is called once per frame
 	void Update () {
+		if(worldvar.newAI)
+		{
+
+			for(int i = 0; i < 40; i++)
+			{
+				if(worldvar.newrestaurants[i] == 0 && citymaker != null)
+				{
+					worldvar.newrestaurants[i] = 2;
+					int z = worldvar.order[i+2];
+					citymaker.DatPlane[z].renderer.material.mainTexture = allStructures[2];
+					worldvar.y--;
+					break;
+				}
+			}
+
+			if(worldvar.y == 0)
+			{
+				worldvar.newAI = false;
+			}
+		}
 	
 	}
 
@@ -40,8 +70,41 @@ public class TheGUI : MonoBehaviour {
 		GUIStyle myStyle = new GUIStyle ();
 		myStyle = new GUIStyle(GUI.skin.button);
 		myStyle.font = myFont;
-		if (GUI.Button (new Rect (200, 450, 110, 40), "Close", myStyle)) 
+		GUI.TextArea (new Rect (100, 100, 300, 300), "It costs $" + restaurantcost+ " to buy a new restaurant");
+		if (GUI.Button (new Rect (100, 450, 110, 40), "Buy", myStyle)) 
 		{
+			//if(worldvar.getIncome() >= restaurantcost)
+			//{
+			if(restaurantcost > 10000)
+			{
+				restaurantcost = 10000;
+			}
+			worldvar.setIncome(-restaurantcost);
+			if(restaurantcost < 10000)
+			{
+				restaurantcost += 2000;
+			}
+
+
+
+			worldvar.setNumOfRestaurants();
+			for(int i = 0; i < 40; i++)
+			{
+				if(worldvar.newrestaurants[i] == 0)
+				{
+				worldvar.newrestaurants[i] = 1;
+				int z = worldvar.order[i+2];
+				citymaker.DatPlane[z].renderer.material.mainTexture = allStructures[1];
+				break;
+				}
+			}
+			showBuying = false;
+			windowOpen = false;
+			//}
+		}
+		if (GUI.Button (new Rect (300, 450, 110, 40), "Close", myStyle)) 
+		{
+			showBuying = false;
 			windowOpen = false;
 		}
 		GUI.DragWindow (new Rect (0, 0, 500, 500));
@@ -56,7 +119,7 @@ public class TheGUI : MonoBehaviour {
 		{
 			windowOpen = false;
 		}
-		GUI.DragWindow (new Rect (0, 0, 500, 500));
+		GUI.DragWindow (new Rect (0, 0, 100, 100));
 
 		if(showObjectives)
 		{
@@ -108,14 +171,48 @@ public class TheGUI : MonoBehaviour {
 
 		if (showEmployees) 
 		{
-			Vector2 v = new Vector2(0,0);
+			Vector2 v = new Vector2(0,100);
+			string[] waiters = employeevar.getwaiternameArray();
+			string waiter = "";
+			waiter = "Waiters: \n";
+			for(int i = 0; i < 10; i++)
+			{
+				if(waiters[i] != null)
+				{
+					waiter += waiters[i] + "\n";
+				}
+			}
 
-			GUI.BeginScrollView(new Rect(440, 25,500, 500), v ,new Rect(0, 0,300, 300));
+			string[] chefs = employeevar.getchefnameArray();
+			string chef = "";
+			chef = "\nChefs: \n";
+			for(int i = 0; i < 10; i++)
+			{
+				if(chefs[i] != null)
+				{
+					chef += chefs[i] + "\n";
+				}
+			}
+
+			string[] managers = employeevar.getmanagernameArray();
+			string manager = "";
+			manager = "\nManagers: \n";
+			for(int i = 0; i < 5; i++)
+			{
+				if(managers[i] != null)
+				{
+					manager += managers[i] + "\n";
+				}
+			}
+
+
+			GUI.BeginScrollView(new Rect(100, 100, 500, 500), v ,new Rect(0, 0, 500, 500));
+			GUI.TextArea(new Rect(0,0,300,300), waiter + chef + manager);
 			GUI.EndScrollView();
 		}
 		if (showCompetition)
 		{
-			GUI.TextField(new Rect(100,100,300,300)," Employees: " + worldvar.getAiEmployeeNumber() + "\n \n \nNumber of restaurants owned: " + worldvar.getNumOfRestaurants() + "\n \n \nMonthly Income: " + worldvar.getAIMonthlyIncome() + "\n \n \nCustomers per month: " + worldvar.getAipopularity() );
+			GUI.TextField(new Rect(100,100,300,300),"Number of restaurants owned: " + worldvar.getNumOfAiRestaurants() + "\n \n \nMonthly Income: " + worldvar.getAIMonthlyIncome() + "\n \n \nCustomers per month: " + worldvar.getAipopularity() );
 		}
 		if (showFinances) 
 		{
@@ -148,7 +245,9 @@ public class TheGUI : MonoBehaviour {
 
 		Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
 		RaycastHit hit;
-		
+
+		/*if(showBuying != true)
+		{
 		if(Physics.Raycast(ray, out hit))
 		{
 			if(lastHitObj)
@@ -164,11 +263,14 @@ public class TheGUI : MonoBehaviour {
 			{
 				if(lastHitObj.renderer.material.mainTexture == allStructures [3])
 				{
+					myObject = lastHitObj;
 					showBuying = true;
 					windowOpen = true;
 				}
 			}
 		}
+		}
+
 		else
 		{
 			if(lastHitObj)
@@ -177,14 +279,29 @@ public class TheGUI : MonoBehaviour {
 				lastHitObj = null;
 			}
 		}
+		*/
 
+
+		if (GUI.Button (new Rect (40, 540, 160, 40), "Buy another restaurant", myStyle)) 
+		{
+			showBuying = true;
+			windowOpen = true;
+			showObjectives = false;
+			showRestaurant = false;
+			showEmployees = false;
+			showCompetition = false;
+			showFinances = false;
+			showNews = false;
+			showAchievements = false;
+		}
 
 		if (showBuying == true && windowOpen == true) 
 		{
 			windowRect = GUI.Window(0, windowRect, WindowFunction1, "Buy new restaurant?");
 		}
 
-		if (GUI.Button (new Rect (190, 540, 110, 40), "Go to restaurant", myStyle)) 
+
+		if (GUI.Button (new Rect (220, 540, 110, 40), "Go to restaurant", myStyle)) 
 		{
 			DontDestroyOnLoad(GameObject.FindGameObjectWithTag("SceneInfo"));
 			DontDestroyOnLoad(GameObject.FindGameObjectWithTag("WorldInfo"));
@@ -192,10 +309,11 @@ public class TheGUI : MonoBehaviour {
 			Application.LoadLevel("NormalRestaurant");
 		}
 
-		if (GUI.Button (new Rect (320, 540, 110, 40), "Objectives", myStyle)) 
+		if (GUI.Button (new Rect (350, 540, 110, 40), "Objectives", myStyle)) 
 		{
 		   windowOpen = true;
 		   showObjectives = true;
+		   showBuying = false;
 		   showRestaurant = false;
 		   showEmployees = false;
 		   showCompetition = false;
@@ -208,10 +326,11 @@ public class TheGUI : MonoBehaviour {
 			windowRect = GUI.Window(0, windowRect, WindowFunction, "Objectives", myStyle1);
 		}
 
-		if (GUI.Button (new Rect (450, 540, 115, 40), "My Restaurant", myStyle))
+		if (GUI.Button (new Rect (480, 540, 115, 40), "My Restaurant", myStyle))
 		{
 			windowOpen = true;
 			showRestaurant = true;
+			showBuying = false;
 			showObjectives = false;
 			showEmployees = false;
 			showCompetition = false;
@@ -223,10 +342,11 @@ public class TheGUI : MonoBehaviour {
 		{
 				windowRect = GUI.Window(0, windowRect, WindowFunction, "My Restarant", myStyle1);
 		}
-		if (GUI.Button (new Rect (580, 540, 115, 40), "Employees", myStyle))
+		if (GUI.Button (new Rect (610, 540, 115, 40), "Employees", myStyle))
 		{
 			windowOpen = true;
 			showEmployees = true;
+			showBuying = false;
 			showRestaurant = false;
 			showObjectives = false;
 			showCompetition = false;
@@ -238,10 +358,11 @@ public class TheGUI : MonoBehaviour {
 		{
 			windowRect = GUI.Window(0, windowRect, WindowFunction, "Employees", myStyle1);
 		}
-		if(GUI.Button (new Rect (710, 540, 115, 40), "Competitiors", myStyle))
+		if(GUI.Button (new Rect (740, 540, 115, 40), "Competitiors", myStyle))
 		{
 			windowOpen = true;
 			showCompetition = true;
+			showBuying = false;
 			showRestaurant = false;
 			showEmployees = false;
 			showObjectives = false;
@@ -253,10 +374,11 @@ public class TheGUI : MonoBehaviour {
 		{
 			windowRect = GUI.Window(0, windowRect, WindowFunction, "Competitiors", myStyle1);
 		}
-		if(GUI.Button (new Rect (840, 540, 115, 40), "Finances", myStyle))
+		if(GUI.Button (new Rect (870, 540, 115, 40), "Finances", myStyle))
 		{
 			windowOpen = true;
 			showFinances = true;
+			showBuying = false;
 			showRestaurant = false;
 			showEmployees = false;
 			showCompetition = false;
@@ -268,10 +390,11 @@ public class TheGUI : MonoBehaviour {
 		{
 			windowRect = GUI.Window(0, windowRect, WindowFunction, "Finances", myStyle1);
 		}
-		if(GUI.Button (new Rect (970, 540, 115, 40), "News", myStyle))
+		if(GUI.Button (new Rect (1000, 540, 115, 40), "News", myStyle))
 		{
 			windowOpen = true;
 			showNews = true;
+			showBuying = false;
 			showRestaurant = false;
 			showEmployees = false;
 			showCompetition = false;
@@ -283,10 +406,11 @@ public class TheGUI : MonoBehaviour {
 		{
 			windowRect = GUI.Window(0, windowRect, WindowFunction, "Recent News", myStyle1);
 		}
-		if(GUI.Button (new Rect (1100, 540, 115, 40), "Achievements", myStyle))
+		if(GUI.Button (new Rect (1130, 540, 115, 40), "Achievements", myStyle))
 		{
 			windowOpen = true;
 			showAchievements = true;
+			showBuying = false;
 			showRestaurant = false;
 			showEmployees = false;
 			showCompetition = false;

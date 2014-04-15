@@ -39,10 +39,9 @@ public class WaiterController : MonoBehaviour {
 		{
 		employeeinfo = GameObject.FindGameObjectWithTag ("Employees");
 		employeevar = (Employees)employeeinfo.GetComponent (typeof(Employees));
-		index = employeevar.setwaiterArray (gameObject);
 		name = employeevar.createName ();
-		employeevar.setwaiternameArray (index, name);
-			Debug.Log(index + " " + name);
+		index = employeevar.setwaiternameArray (name);
+		Debug.Log(index + " " + name);
 		restaurantvar.newwaiter = false;
 		}
 
